@@ -1,6 +1,0 @@
-{
-  "name": "webhook-panel",
-  "version": "1.0.0",
-  "main": "api/webhook.js",
-  "dependencies": {}
-}
