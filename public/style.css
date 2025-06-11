@@ -1,0 +1,13 @@
+body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 20px; }
+h1 { color: #333; }
+#list { margin-top: 20px; }
+.post {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px #0001;
+  margin-bottom: 16px;
+  padding: 16px;
+  word-break: break-all;
+}
+.time { color: #888; font-size: 0.9em; }
+pre { background: #f0f0f0; padding: 8px; border-radius: 4px; }
