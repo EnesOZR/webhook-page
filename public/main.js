@@ -8,7 +8,7 @@ async function fetchPosts() {
     div.className = 'post';
     div.innerHTML = `
       <div class="time">${new Date(post.time).toLocaleString('tr-TR')}</div>
-      <div class="cookie-count">Toplam Cookie Sayısı: ${post.totalCookies}</div>
+      <div class="cookie-count">Bu sitede ${post.cookieCount} cookie bulundu</div>
       <pre>${JSON.stringify(post.body, null, 2)}</pre>
     `;
     list.appendChild(div);
