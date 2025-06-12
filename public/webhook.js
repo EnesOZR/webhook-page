@@ -5,10 +5,6 @@ let searchQuery = '';
 
 // DOM Elements
 const webhookList = document.getElementById('webhookList');
-const modal = document.getElementById('cookieModal');
-const jsonContent = document.getElementById('jsonContent');
-const copyJson = document.getElementById('copyJson');
-const closeModal = document.getElementById('closeModal');
 const copiedToast = document.getElementById('copiedToast');
 const refreshBtn = document.getElementById('refreshBtn');
 const searchInput = document.getElementById('searchInput');
@@ -44,19 +40,70 @@ function renderCookies() {
                     User ID: ${item.userId}
                 </div>
             </div>
+            <div class="webhook-content">
+                <pre></pre>
+                <div class="webhook-actions">
+                    <button class="action-button copy-json">
+                        <span class="material-icons">content_copy</span>
+                        Copy JSON
+                    </button>
+                    <button class="action-button secondary collapse-content">
+                        <span class="material-icons">expand_less</span>
+                        Collapse
+                    </button>
+                </div>
+            </div>
         </div>
     `).join('');
 
     // Add click event listeners to all webhook items
     document.querySelectorAll('.webhook-item').forEach(item => {
-        item.addEventListener('click', () => {
+        const content = item.querySelector('.webhook-content');
+        const pre = content.querySelector('pre');
+        const copyBtn = content.querySelector('.copy-json');
+        const collapseBtn = content.querySelector('.collapse-content');
+        
+        // Main item click handler
+        item.addEventListener('click', (e) => {
+            // Ignore if clicking on buttons
+            if (e.target.closest('.webhook-actions')) return;
+            
             const id = parseInt(item.dataset.id);
             const cookie = currentCookies.find(c => c.id === id);
+            
             if (cookie) {
-                jsonContent.textContent = JSON.stringify(cookie, null, 2);
-                modal.style.display = 'flex';
-                modal.classList.add('show');
+                // Toggle content visibility
+                const isExpanded = content.classList.contains('expanded');
+                
+                // Close all other expanded items
+                document.querySelectorAll('.webhook-content.expanded').forEach(el => {
+                    if (el !== content) {
+                        el.classList.remove('expanded');
+                    }
+                });
+
+                if (!isExpanded) {
+                    content.classList.add('expanded');
+                    pre.textContent = JSON.stringify(cookie, null, 2);
+                }
             }
+        });
+
+        // Copy button handler
+        copyBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(pre.textContent).then(() => {
+                copiedToast.style.display = 'block';
+                setTimeout(() => {
+                    copiedToast.style.display = 'none';
+                }, 2000);
+            });
+        });
+
+        // Collapse button handler
+        collapseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            content.classList.remove('expanded');
         });
     });
 }
@@ -114,27 +161,6 @@ function getFilteredCookies() {
 }
 
 // Event Listeners
-copyJson.addEventListener('click', () => {
-    navigator.clipboard.writeText(jsonContent.textContent).then(() => {
-        copiedToast.style.display = 'block';
-        setTimeout(() => {
-            copiedToast.style.display = 'none';
-        }, 2000);
-    });
-});
-
-closeModal.addEventListener('click', () => {
-    modal.classList.remove('show');
-    modal.style.display = 'none';
-});
-
-window.addEventListener('click', (event) => {
-    if (event.target === modal) {
-        modal.classList.remove('show');
-        modal.style.display = 'none';
-    }
-});
-
 refreshBtn.addEventListener('click', fetchCookies);
 
 searchInput.addEventListener('input', (e) => {

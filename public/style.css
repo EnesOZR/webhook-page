@@ -176,14 +176,11 @@ select {
   border-bottom: 1px solid #e0e0e0;
   cursor: pointer;
   transition: all 0.2s ease;
-  position: relative;
   background: #fff;
 }
 
 .webhook-item:hover {
   background: #f8f9fa;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .webhook-item:active {
@@ -243,6 +240,84 @@ select {
   display: flex;
   align-items: center;
   gap: 5px;
+}
+
+.webhook-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+  background: #f8f9fa;
+  margin-top: 10px;
+  border-radius: 4px;
+}
+
+.webhook-content.expanded {
+  max-height: 500px;
+  padding: 15px;
+  margin-top: 15px;
+  border: 1px solid #e0e0e0;
+}
+
+.webhook-content pre {
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.webhook-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.webhook-content.expanded .webhook-actions {
+  opacity: 1;
+}
+
+.action-button {
+  background: #1a73e8;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.action-button:hover {
+  background: #1557b0;
+}
+
+.action-button.secondary {
+  background: #5f6368;
+}
+
+.action-button.secondary:hover {
+  background: #494c50;
+}
+
+.copied-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #323232;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  display: none;
+  z-index: 1100;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 /* Modal Styles */
@@ -338,18 +413,4 @@ select {
   font-size: 14px;
   line-height: 1.5;
   border: 1px solid #e0e0e0;
-}
-
-.copied-toast {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: #323232;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 4px;
-  display: none;
-  z-index: 1100;
-  font-size: 14px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
