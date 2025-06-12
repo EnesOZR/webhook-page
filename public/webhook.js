@@ -126,12 +126,9 @@ function renderCookies() {
     console.log('Rendering cookies:', currentCookies);
     const filteredCookies = getFilteredCookies();
     
-    webhookList.innerHTML = filteredCookies.map(item => {
-        const userIdInfo = formatUserId(item.userId);
-        
-        return `
+    webhookList.innerHTML = filteredCookies.map(item => `
         <div class="webhook-item" data-id="${item.id}">
-            <div class="webhook-header" data-id="${item.id}">
+            <div class="webhook-header">
                 <div class="domain-name">
                     <span class="material-icons">public</span>
                     ${item.body.url || 'Unknown Domain'}
@@ -145,100 +142,51 @@ function renderCookies() {
                     <span class="material-icons">cookie</span>
                     ${item.cookieCount} cookies
                 </div>
-                <div class="info-item user-id-container">
+                <div class="info-item">
                     <span class="material-icons">person</span>
-                    <div class="user-id-info">
-                        <span class="user-id-main">${userIdInfo.mainInfo}</span>
-                        <div class="user-id-details">
-                            ${userIdInfo.details.map(detail => `
-                                <div class="detail-item">
-                                    <span class="material-icons">${detail.icon}</span>
-                                    <span class="detail-label">${detail.label}:</span>
-                                    <span class="detail-value">${detail.value}</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
+                    User ID: ${item.userId}
                 </div>
             </div>
-            <div class="webhook-content" id="content-${item.id}">
-                <pre class="json-content"></pre>
-                <div class="webhook-actions">
-                    <button class="action-button copy-json">
-                        <span class="material-icons">content_copy</span>
-                        Copy JSON
-                    </button>
-                    <button class="action-button secondary collapse-content">
-                        <span class="material-icons">expand_less</span>
-                        Close
-                    </button>
-                </div>
+            <div class="webhook-content">
+                <pre class="json-content">${JSON.stringify(item, null, 2)}</pre>
+                <button class="copy-button" title="Copy JSON">
+                    <span class="material-icons">content_copy</span>
+                </button>
             </div>
         </div>
-    `}).join('');
+    `).join('');
 
-    // Add click event listeners to all webhook items
-    document.querySelectorAll('.webhook-header').forEach(header => {
-        header.addEventListener('click', function(e) {
-            e.stopPropagation();
-            
-            const id = parseInt(this.dataset.id);
-            console.log('Header clicked, ID:', id);
-            
-            const item = this.closest('.webhook-item');
-            const content = item.querySelector('.webhook-content');
-            const pre = content.querySelector('.json-content');
-            
-            const cookie = currentCookies.find(c => c.id === id);
-            console.log('Found cookie:', cookie);
-            
-            if (cookie) {
-                // Toggle content visibility
-                const isExpanded = content.classList.contains('expanded');
-                console.log('Content expanded state:', isExpanded);
-                
-                // Close all other expanded items
-                document.querySelectorAll('.webhook-content.expanded').forEach(el => {
-                    if (el !== content) {
-                        console.log('Closing other expanded content');
-                        el.classList.remove('expanded');
-                    }
-                });
+    // Add click event listeners
+    document.querySelectorAll('.webhook-item').forEach(item => {
+        const content = item.querySelector('.webhook-content');
+        const copyButton = item.querySelector('.copy-button');
 
-                if (!isExpanded) {
-                    console.log('Expanding content and setting JSON');
-                    content.classList.add('expanded');
-                    pre.textContent = JSON.stringify(cookie, null, 2);
-                } else {
-                    console.log('Collapsing content');
-                    content.classList.remove('expanded');
+        // Toggle content on item click
+        item.addEventListener('click', (e) => {
+            // Don't toggle if clicking copy button
+            if (e.target.closest('.copy-button')) return;
+            
+            // Toggle expanded class
+            content.classList.toggle('expanded');
+            
+            // Close other expanded items
+            document.querySelectorAll('.webhook-content.expanded').forEach(el => {
+                if (el !== content) {
+                    el.classList.remove('expanded');
                 }
-            }
-        });
-    });
-
-    // Add click handlers for action buttons
-    document.querySelectorAll('.webhook-content').forEach(content => {
-        const copyBtn = content.querySelector('.copy-json');
-        const collapseBtn = content.querySelector('.collapse-content');
-        const pre = content.querySelector('.json-content');
-        
-        copyBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const text = pre.textContent;
-            if (text) {
-                navigator.clipboard.writeText(text).then(() => {
-                    copiedToast.style.display = 'block';
-                    setTimeout(() => {
-                        copiedToast.style.display = 'none';
-                    }, 2000);
-                });
-            }
+            });
         });
 
-        collapseBtn.addEventListener('click', function(e) {
+        // Copy button click handler
+        copyButton.addEventListener('click', (e) => {
             e.stopPropagation();
-            content.classList.remove('expanded');
+            const jsonContent = item.querySelector('.json-content').textContent;
+            navigator.clipboard.writeText(jsonContent).then(() => {
+                copiedToast.style.display = 'block';
+                setTimeout(() => {
+                    copiedToast.style.display = 'none';
+                }, 2000);
+            });
         });
     });
 }
