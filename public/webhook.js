@@ -148,25 +148,22 @@ function renderCookies() {
                 </div>
             </div>
             <div class="webhook-content">
-                <pre class="json-content">${JSON.stringify(item, null, 2)}</pre>
                 <button class="copy-button" title="Copy JSON">
                     <span class="material-icons">content_copy</span>
+                    Copy JSON
                 </button>
+                <pre class="json-content">${JSON.stringify(item, null, 2)}</pre>
             </div>
         </div>
     `).join('');
 
     // Add click event listeners
-    document.querySelectorAll('.webhook-item').forEach(item => {
-        const content = item.querySelector('.webhook-content');
-        const copyButton = item.querySelector('.copy-button');
-
-        // Toggle content on item click
-        item.addEventListener('click', (e) => {
-            // Don't toggle if clicking copy button
-            if (e.target.closest('.copy-button')) return;
-            
-            // Toggle expanded class
+    document.querySelectorAll('.webhook-header').forEach(header => {
+        const content = header.parentElement.querySelector('.webhook-content');
+        
+        // Toggle content on header click
+        header.addEventListener('click', (e) => {
+            e.stopPropagation();
             content.classList.toggle('expanded');
             
             // Close other expanded items
@@ -176,11 +173,15 @@ function renderCookies() {
                 }
             });
         });
+    });
 
-        // Copy button click handler
-        copyButton.addEventListener('click', (e) => {
+    // Add copy button click handlers
+    document.querySelectorAll('.copy-button').forEach(button => {
+        button.addEventListener('click', (e) => {
             e.stopPropagation();
-            const jsonContent = item.querySelector('.json-content').textContent;
+            const content = button.closest('.webhook-content');
+            const jsonContent = content.querySelector('.json-content').textContent;
+            
             navigator.clipboard.writeText(jsonContent).then(() => {
                 copiedToast.style.display = 'block';
                 setTimeout(() => {

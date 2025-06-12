@@ -4,12 +4,7 @@
     margin-bottom: 16px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    cursor: pointer;
     transition: all 0.3s ease;
-}
-
-.webhook-item:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .webhook-header {
@@ -19,6 +14,11 @@
     align-items: center;
     background: #f8f9fa;
     border-bottom: 1px solid #e9ecef;
+    cursor: pointer;
+}
+
+.webhook-header:hover {
+    background: #e9ecef;
 }
 
 .webhook-info {
@@ -38,44 +38,48 @@
 }
 
 .webhook-content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease-out;
-    position: relative;
+    display: none;
     background: #f8f9fa;
+    position: relative;
+    padding: 16px;
 }
 
 .webhook-content.expanded {
-    max-height: 1000px;
-    transition: max-height 0.5s ease-in;
+    display: block;
 }
 
 .json-content {
-    padding: 16px;
     margin: 0;
     white-space: pre-wrap;
     font-family: monospace;
     font-size: 14px;
     color: #212529;
     background: #f8f9fa;
+    padding-top: 40px; /* Space for copy button */
 }
 
 .copy-button {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: 16px;
+    left: 16px;
     background: #fff;
     border: 1px solid #dee2e6;
     border-radius: 4px;
-    padding: 4px 8px;
+    padding: 8px 16px;
     cursor: pointer;
     display: flex;
     align-items: center;
+    gap: 8px;
     transition: all 0.2s ease;
+    z-index: 1;
 }
 
 .copy-button:hover {
     background: #e9ecef;
+}
+
+.copy-button .material-icons {
+    margin-right: 0;
 }
 
 .material-icons {
