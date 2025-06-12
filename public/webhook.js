@@ -15,110 +15,93 @@ const activeDomainsElement = document.getElementById('activeDomains');
 const clearDataBtn = document.getElementById('clearData');
 const exportDataBtn = document.getElementById('exportData');
 
-// Get browser information
-function getBrowserInfo() {
-    const ua = navigator.userAgent;
-    let browserName = "Unknown";
-    let browserVersion = "";
-    
-    if (ua.indexOf("Chrome") > -1) {
-        browserName = "Chrome";
-        browserVersion = ua.match(/Chrome\/([0-9.]+)/)[1];
-    } else if (ua.indexOf("Firefox") > -1) {
-        browserName = "Firefox";
-        browserVersion = ua.match(/Firefox\/([0-9.]+)/)[1];
-    } else if (ua.indexOf("Safari") > -1) {
-        browserName = "Safari";
-        browserVersion = ua.match(/Version\/([0-9.]+)/)[1];
-    } else if (ua.indexOf("Edge") > -1) {
-        browserName = "Edge";
-        browserVersion = ua.match(/Edge\/([0-9.]+)/)[1];
-    }
-    
-    return `${browserName}${browserVersion.split('.')[0]}`;
-}
+// Generate unique device ID
+async function generateDeviceId() {
+    try {
+        // Get device information
+        const deviceInfo = {
+            platform: navigator.platform,
+            userAgent: navigator.userAgent,
+            language: navigator.language,
+            screenResolution: `${window.screen.width}x${window.screen.height}`,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            timestamp: Date.now()
+        };
 
-// Get device type
-function getDeviceType() {
-    const ua = navigator.userAgent;
-    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
-        return "Tablet";
-    } else if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
-        return "Mobile";
-    }
-    return "Desktop";
-}
-
-// Get OS information
-function getOSInfo() {
-    const ua = navigator.userAgent;
-    let os = "Unknown";
-    
-    if (ua.indexOf("Win") > -1) os = "Win";
-    else if (ua.indexOf("Mac") > -1) os = "Mac";
-    else if (ua.indexOf("Linux") > -1) os = "Linux";
-    else if (ua.indexOf("Android") > -1) os = "Android";
-    else if (ua.indexOf("iOS") > -1) os = "iOS";
-    
-    return os;
-}
-
-// Calculate session duration
-function getSessionDuration(timestamp) {
-    const now = Date.now();
-    const duration = now - timestamp;
-    const hours = Math.floor(duration / (1000 * 60 * 60));
-    const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h${minutes}m`;
-}
-
-// Format user ID for display
-function formatUserId(userId) {
-    // Check if it's already a formatted ID
-    if (typeof userId === 'string' && userId.includes('|')) {
-        const parts = userId.split('|');
-        if (parts.length >= 6) {
-            const [device, browser, os, location, session, timestamp] = parts;
-            const date = new Date(parseInt(timestamp));
-            const sessionDuration = getSessionDuration(parseInt(timestamp));
-
-            return {
-                mainInfo: `${device} | ${browser} | ${sessionDuration}`,
-                details: [
-                    { icon: 'devices', label: 'Device', value: device },
-                    { icon: 'web', label: 'Browser', value: browser },
-                    { icon: 'computer', label: 'OS', value: os },
-                    { icon: 'location_on', label: 'Location', value: location },
-                    { icon: 'timer', label: 'Session', value: session },
-                    { icon: 'schedule', label: 'Started', value: date.toLocaleString() },
-                    { icon: 'hourglass_top', label: 'Duration', value: sessionDuration }
-                ]
-            };
+        // Try to get additional network information
+        try {
+            const response = await fetch('https://api.ipify.org?format=json');
+            const data = await response.json();
+            deviceInfo.ip = data.ip;
+        } catch (error) {
+            console.log('Could not fetch IP:', error);
         }
+
+        // Create a unique hash from the device information
+        const deviceString = JSON.stringify(deviceInfo);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(deviceString));
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const deviceId = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 12);
+
+        return {
+            id: deviceId,
+            details: deviceInfo
+        };
+    } catch (error) {
+        console.error('Error generating device ID:', error);
+        return {
+            id: 'unknown-device',
+            details: { error: 'Could not generate device ID' }
+        };
     }
+}
+
+// Format device information for display
+function formatDeviceInfo(deviceInfo) {
+    const info = [];
     
-    // Generate new format for old IDs
-    const device = getDeviceType();
-    const browser = getBrowserInfo();
-    const os = getOSInfo();
-    const location = "Unknown";
-    const session = Math.random().toString(36).substr(2, 9);
-    const timestamp = Date.now();
+    if (deviceInfo.platform) info.push(`Platform: ${deviceInfo.platform}`);
+    if (deviceInfo.ip) info.push(`IP: ${deviceInfo.ip}`);
+    if (deviceInfo.timezone) info.push(`Timezone: ${deviceInfo.timezone}`);
     
-    const newUserId = `${device}|${browser}|${os}|${location}|${session}|${timestamp}`;
+    const browser = getBrowserInfo(deviceInfo.userAgent);
+    if (browser) info.push(`Browser: ${browser}`);
     
-    return {
-        mainInfo: `${device} | ${browser} | 0h0m`,
-        details: [
-            { icon: 'devices', label: 'Device', value: device },
-            { icon: 'web', label: 'Browser', value: browser },
-            { icon: 'computer', label: 'OS', value: os },
-            { icon: 'location_on', label: 'Location', value: location },
-            { icon: 'timer', label: 'Session', value: session },
-            { icon: 'schedule', label: 'Started', value: new Date(timestamp).toLocaleString() },
-            { icon: 'hourglass_top', label: 'Duration', value: '0h0m' }
-        ]
-    };
+    return info.join(' | ');
+}
+
+// Get browser information from user agent
+function getBrowserInfo(userAgent) {
+    const ua = userAgent.toLowerCase();
+    if (ua.includes('firefox')) return 'Firefox';
+    if (ua.includes('chrome')) return 'Chrome';
+    if (ua.includes('safari')) return 'Safari';
+    if (ua.includes('edge')) return 'Edge';
+    if (ua.includes('opera')) return 'Opera';
+    return 'Unknown Browser';
+}
+
+// Check if cookie data is unique
+function isUniqueCookie(newCookie, existingCookies) {
+    return !existingCookies.some(cookie => 
+        JSON.stringify(cookie.body) === JSON.stringify(newCookie.body) &&
+        cookie.userId === newCookie.userId
+    );
+}
+
+// Add new cookie data
+async function addCookieData(cookieData) {
+    if (!cookieData.userId) {
+        const deviceInfo = await generateDeviceId();
+        cookieData.userId = deviceInfo.id;
+        cookieData.deviceInfo = deviceInfo.details;
+    }
+
+    if (isUniqueCookie(cookieData, currentCookies)) {
+        currentCookies.unshift(cookieData);
+        updateUI();
+        saveToLocalStorage();
+    }
 }
 
 // Render cookies to the list
@@ -143,8 +126,11 @@ function renderCookies() {
                     ${item.cookieCount} cookies
                 </div>
                 <div class="info-item">
-                    <span class="material-icons">person</span>
-                    User ID: ${item.userId}
+                    <span class="material-icons">devices</span>
+                    <div class="device-info">
+                        <span class="device-id">${item.userId}</span>
+                        <span class="device-details">${formatDeviceInfo(item.deviceInfo || {})}</span>
+                    </div>
                 </div>
             </div>
             <div class="webhook-content">
@@ -152,7 +138,7 @@ function renderCookies() {
                     <span class="material-icons">content_copy</span>
                     Copy JSON
                 </button>
-                <pre class="json-content">${JSON.stringify(item, null, 2)}</pre>
+                <pre class="json-content">${JSON.stringify(item.body, null, 2)}</pre>
             </div>
         </div>
     `).join('');
@@ -161,12 +147,10 @@ function renderCookies() {
     document.querySelectorAll('.webhook-header').forEach(header => {
         const content = header.parentElement.querySelector('.webhook-content');
         
-        // Toggle content on header click
         header.addEventListener('click', (e) => {
             e.stopPropagation();
             content.classList.toggle('expanded');
             
-            // Close other expanded items
             document.querySelectorAll('.webhook-content.expanded').forEach(el => {
                 if (el !== content) {
                     el.classList.remove('expanded');

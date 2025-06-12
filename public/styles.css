@@ -37,11 +37,29 @@
     color: #6c757d;
 }
 
+.device-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.device-id {
+    font-family: monospace;
+    color: #495057;
+}
+
+.device-details {
+    font-size: 12px;
+    color: #6c757d;
+}
+
 .webhook-content {
     display: none;
     background: #f8f9fa;
     position: relative;
     padding: 16px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .webhook-content.expanded {
@@ -55,7 +73,10 @@
     font-size: 14px;
     color: #212529;
     background: #f8f9fa;
-    padding-top: 40px; /* Space for copy button */
+    padding-top: 40px;
+    width: 100%;
+    overflow-x: auto;
+    box-sizing: border-box;
 }
 
 .copy-button {
