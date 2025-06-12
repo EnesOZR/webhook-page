@@ -15,6 +15,20 @@ const activeDomainsElement = document.getElementById('activeDomains');
 const clearDataBtn = document.getElementById('clearData');
 const exportDataBtn = document.getElementById('exportData');
 
+// Format user ID for display
+function formatUserId(userId) {
+    // Check if it's already a formatted ID
+    if (typeof userId === 'string' && userId.includes('_')) {
+        const parts = userId.split('_');
+        if (parts.length === 3) {
+            const [device, session, timestamp] = parts;
+            const date = new Date(parseInt(timestamp));
+            return `${device.charAt(0).toUpperCase() + device.slice(1)} | Session: ${session} | ${date.toLocaleString()}`;
+        }
+    }
+    return `User ${userId}`; // Fallback for old format
+}
+
 // Render cookies to the list
 function renderCookies() {
     console.log('Rendering cookies:', currentCookies);
@@ -38,7 +52,10 @@ function renderCookies() {
                 </div>
                 <div class="info-item">
                     <span class="material-icons">person</span>
-                    User ID: ${item.userId}
+                    <div class="user-id-info">
+                        <span class="user-id-label">User:</span>
+                        <span class="user-id-value">${formatUserId(item.userId)}</span>
+                    </div>
                 </div>
             </div>
             <div class="webhook-content" id="content-${item.id}">
