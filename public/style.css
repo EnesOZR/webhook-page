@@ -282,3 +282,134 @@ pre {
     max-width: 100%;
   }
 }
+
+.actions-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.action-button {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  background: var(--secondary-color);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  transition: opacity 0.2s;
+}
+
+.action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-button.warning {
+  background: #e74c3c;
+}
+
+.action-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.select-all-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 15px;
+  cursor: pointer;
+}
+
+.post {
+  position: relative;
+}
+
+.post-select {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 1;
+}
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-content {
+  background: var(--card-background);
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: var(--shadow);
+}
+
+.modal-content h2 {
+  color: var(--primary-color);
+  margin-bottom: 15px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.modal-button {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  background: var(--hover-color);
+}
+
+.modal-button.warning {
+  background: #e74c3c;
+  color: white;
+}
+
+/* User Filter Styles */
+.user-filter {
+  margin-top: 15px;
+}
+
+.user-filter h4 {
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: var(--text-light);
+}
+
+.user-filter select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--card-background);
+}

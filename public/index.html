@@ -35,6 +35,12 @@
                 <!-- Domainler JavaScript ile doldurulacak -->
               </select>
             </div>
+            <div class="user-filter">
+              <h4>Kullanıcı Filtresi</h4>
+              <select id="userFilter">
+                <option value="">Tümü</option>
+              </select>
+            </div>
           </div>
         </div>
         
@@ -42,6 +48,18 @@
           <h3><i class="fas fa-chart-pie"></i> Özet</h3>
           <div id="summary">
             <!-- Özet bilgiler JavaScript ile doldurulacak -->
+          </div>
+        </div>
+
+        <div class="actions-section">
+          <h3><i class="fas fa-trash"></i> Veri Yönetimi</h3>
+          <div class="action-buttons">
+            <button id="deleteSelected" class="action-button" disabled>
+              <i class="fas fa-trash-alt"></i> Seçilenleri Sil
+            </button>
+            <button id="deleteAll" class="action-button warning">
+              <i class="fas fa-trash"></i> Tümünü Sil
+            </button>
           </div>
         </div>
       </div>
@@ -53,6 +71,10 @@
             <i class="fas fa-search"></i>
           </div>
           <div class="view-options">
+            <label class="select-all-option">
+              <input type="checkbox" id="selectAll">
+              <span>Tümünü Seç</span>
+            </label>
             <button id="refreshButton" class="refresh-btn">
               <i class="fas fa-sync-alt"></i> Yenile
             </button>
@@ -65,6 +87,19 @@
       </div>
     </div>
   </div>
+
+  <!-- Onay Modal -->
+  <div id="confirmModal" class="modal">
+    <div class="modal-content">
+      <h2>Onay</h2>
+      <p id="confirmMessage">Bu işlemi gerçekleştirmek istediğinizden emin misiniz?</p>
+      <div class="modal-buttons">
+        <button id="confirmCancel" class="modal-button">İptal</button>
+        <button id="confirmOk" class="modal-button warning">Onayla</button>
+      </div>
+    </div>
+  </div>
+
   <script src="main.js"></script>
 </body>
 </html>
