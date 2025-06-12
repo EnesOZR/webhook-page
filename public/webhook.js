@@ -131,7 +131,7 @@ function renderCookies() {
         
         return `
         <div class="webhook-item" data-id="${item.id}">
-            <div class="webhook-header">
+            <div class="webhook-header" data-id="${item.id}">
                 <div class="domain-name">
                     <span class="material-icons">public</span>
                     ${item.body.url || 'Unknown Domain'}
@@ -178,25 +178,16 @@ function renderCookies() {
     `}).join('');
 
     // Add click event listeners to all webhook items
-    document.querySelectorAll('.webhook-item').forEach(item => {
-        const id = parseInt(item.dataset.id);
-        console.log('Setting up click handler for item:', id);
-        
-        // Get the content elements
-        const content = item.querySelector('.webhook-content');
-        const pre = content.querySelector('.json-content');
-        const copyBtn = content.querySelector('.copy-json');
-        const collapseBtn = content.querySelector('.collapse-content');
-        
-        // Main click handler for the item
-        item.addEventListener('click', function(e) {
-            console.log('Item clicked:', id);
+    document.querySelectorAll('.webhook-header').forEach(header => {
+        header.addEventListener('click', function(e) {
+            e.stopPropagation();
             
-            // Don't handle click if it's on a button
-            if (e.target.closest('.webhook-actions')) {
-                console.log('Clicked on action button, ignoring');
-                return;
-            }
+            const id = parseInt(this.dataset.id);
+            console.log('Header clicked, ID:', id);
+            
+            const item = this.closest('.webhook-item');
+            const content = item.querySelector('.webhook-content');
+            const pre = content.querySelector('.json-content');
             
             const cookie = currentCookies.find(c => c.id === id);
             console.log('Found cookie:', cookie);
@@ -217,23 +208,26 @@ function renderCookies() {
                 if (!isExpanded) {
                     console.log('Expanding content and setting JSON');
                     content.classList.add('expanded');
-                    const jsonString = JSON.stringify(cookie, null, 2);
-                    pre.textContent = jsonString;
-                    console.log('Set JSON content:', jsonString);
+                    pre.textContent = JSON.stringify(cookie, null, 2);
                 } else {
                     console.log('Collapsing content');
                     content.classList.remove('expanded');
                 }
             }
         });
+    });
 
-        // Copy button handler
+    // Add click handlers for action buttons
+    document.querySelectorAll('.webhook-content').forEach(content => {
+        const copyBtn = content.querySelector('.copy-json');
+        const collapseBtn = content.querySelector('.collapse-content');
+        const pre = content.querySelector('.json-content');
+        
         copyBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            const cookie = currentCookies.find(c => c.id === id);
-            if (cookie) {
-                const jsonString = JSON.stringify(cookie, null, 2);
-                navigator.clipboard.writeText(jsonString).then(() => {
+            const text = pre.textContent;
+            if (text) {
+                navigator.clipboard.writeText(text).then(() => {
                     copiedToast.style.display = 'block';
                     setTimeout(() => {
                         copiedToast.style.display = 'none';
@@ -242,7 +236,6 @@ function renderCookies() {
             }
         });
 
-        // Collapse button handler
         collapseBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             content.classList.remove('expanded');

@@ -172,73 +172,45 @@ select {
 }
 
 .webhook-item {
-  padding: 20px;
+  padding: 0;
   border-bottom: 1px solid #e0e0e0;
-  cursor: pointer;
-  transition: all 0.2s ease;
   background: #fff;
 }
 
-.webhook-item:hover {
+.webhook-header {
+  padding: 20px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.webhook-header:hover {
   background: #f8f9fa;
 }
 
-.webhook-item:last-child {
-  border-bottom: none;
-}
-
-.webhook-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.domain-name {
-  font-size: 18px;
-  color: #1a73e8;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.webhook-time {
-  color: #666;
-  font-size: 14px;
+.webhook-header:active {
+  background: #f0f0f0;
 }
 
 .webhook-info {
-  display: flex;
-  gap: 20px;
-  color: #444;
-  font-size: 14px;
-  margin-bottom: 10px;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  padding: 0 20px 20px 20px;
 }
 
 .webhook-content {
   height: 0;
   overflow: hidden;
-  transition: height 0.3s ease-out;
+  transition: all 0.3s ease-out;
   background: #f8f9fa;
-  border-radius: 4px;
   opacity: 0;
+  padding: 0 20px;
 }
 
 .webhook-content.expanded {
   height: auto;
   min-height: 200px;
   max-height: 500px;
-  padding: 15px;
-  margin-top: 10px;
-  border: 1px solid #e0e0e0;
   opacity: 1;
-  transition: all 0.3s ease-out;
+  padding: 20px;
+  border-top: 1px solid #e0e0e0;
 }
 
 .webhook-content pre {
@@ -381,13 +353,13 @@ select {
 }
 
 .json-content {
-  font-family: monospace;
+  font-family: 'Roboto Mono', monospace;
   white-space: pre-wrap;
   word-break: break-all;
   font-size: 14px;
   line-height: 1.5;
   margin: 0;
-  padding: 10px;
+  padding: 15px;
   background: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
