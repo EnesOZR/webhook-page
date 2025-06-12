@@ -183,28 +183,6 @@ select {
   background: #f8f9fa;
 }
 
-.webhook-item:active {
-  transform: translateY(0);
-  background: #f0f0f0;
-}
-
-.webhook-item::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: 20px;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%231a73e8"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>');
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.webhook-item:hover::after {
-  opacity: 1;
-}
-
 .webhook-item:last-child {
   border-bottom: none;
 }
@@ -234,6 +212,7 @@ select {
   gap: 20px;
   color: #444;
   font-size: 14px;
+  margin-bottom: 10px;
 }
 
 .info-item {
@@ -243,19 +222,23 @@ select {
 }
 
 .webhook-content {
-  max-height: 0;
+  height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease-out;
+  transition: height 0.3s ease-out;
   background: #f8f9fa;
-  margin-top: 10px;
   border-radius: 4px;
+  opacity: 0;
 }
 
 .webhook-content.expanded {
+  height: auto;
+  min-height: 200px;
   max-height: 500px;
   padding: 15px;
-  margin-top: 15px;
+  margin-top: 10px;
   border: 1px solid #e0e0e0;
+  opacity: 1;
+  transition: all 0.3s ease-out;
 }
 
 .webhook-content pre {
@@ -271,13 +254,7 @@ select {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 10px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.webhook-content.expanded .webhook-actions {
-  opacity: 1;
+  margin-top: 15px;
 }
 
 .action-button {
@@ -404,13 +381,16 @@ select {
 }
 
 .json-content {
-  background: #f8f9fa;
-  padding: 15px;
-  border-radius: 4px;
   font-family: monospace;
   white-space: pre-wrap;
-  overflow-x: auto;
+  word-break: break-all;
   font-size: 14px;
   line-height: 1.5;
+  margin: 0;
+  padding: 10px;
+  background: #fff;
   border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  overflow-x: auto;
+  height: calc(100% - 50px);
 }
