@@ -1,182 +1,105 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cookie Manager</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .cookie-list {
-            max-height: calc(100vh - 100px);
-            overflow-y: auto;
-        }
-        .cookie-item {
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .cookie-item:hover {
-            background-color: #f8f9fa;
-        }
-        .cookie-detail {
-            display: none;
-            background-color: #fff;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            padding: 15px;
-            margin-top: 10px;
-        }
-        .cookie-detail.active {
-            display: block;
-        }
-        .timestamp {
-            color: #6c757d;
-            font-size: 0.875rem;
-        }
-        .badge {
-            margin-left: 5px;
-        }
-        .domain {
-            color: #0d6efd;
-            font-weight: 500;
-        }
-    </style>
+    <title>Cookie Takip Paneli</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container-fluid py-3">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Cookie List</h5>
-                        <button id="refreshBtn" class="btn btn-sm btn-outline-primary">Refresh</button>
-                    </div>
-                    <div class="card-body p-0">
-                        <div id="cookieList" class="cookie-list list-group list-group-flush">
-                            <!-- Cookies will be listed here -->
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1><i class="fas fa-cookie-bite"></i> Cookie Takip Paneli</h1>
+                <div class="stats-cards" id="stats">
+                    <!-- İstatistik kartları buraya gelecek -->
+                </div>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="filter-section">
+                    <h3><i class="fas fa-filter"></i> Filtreler</h3>
+                    <div class="filter-options">
+                        <label class="filter-option">
+                            <input type="checkbox" id="showOnlyCookies" checked>
+                            <span>Sadece Cookie'leri Göster</span>
+                        </label>
+                        <div class="domain-filter">
+                            <h4>Domain Filtresi</h4>
+                            <select id="domainFilter">
+                                <option value="">Tümü</option>
+                                <!-- Domainler JavaScript ile doldurulacak -->
+                            </select>
+                        </div>
+                        <div class="user-filter">
+                            <h4>Kullanıcı Filtresi</h4>
+                            <select id="userFilter">
+                                <option value="">Tümü</option>
+                            </select>
                         </div>
                     </div>
                 </div>
+                
+                <div class="summary-section">
+                    <h3><i class="fas fa-chart-pie"></i> Özet</h3>
+                    <div id="summary">
+                        <!-- Özet bilgiler JavaScript ile doldurulacak -->
+                    </div>
+                </div>
+
+                <div class="actions-section">
+                    <h3><i class="fas fa-trash"></i> Veri Yönetimi</h3>
+                    <div class="action-buttons">
+                        <button id="deleteSelected" class="action-button" disabled>
+                            <i class="fas fa-trash-alt"></i> Seçilenleri Sil
+                        </button>
+                        <button id="deleteAll" class="action-button warning">
+                            <i class="fas fa-trash"></i> Tümünü Sil
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-8">
-                <div id="cookieDetail" class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Cookie Details</h5>
+
+            <div class="content-area">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Cookie veya domain ara...">
+                        <i class="fas fa-search"></i>
                     </div>
-                    <div class="card-body">
-                        <div id="detailContent">
-                            <!-- Cookie details will be shown here -->
-                            <p class="text-muted">Select a cookie to view details</p>
-                        </div>
+                    <div class="view-options">
+                        <label class="select-all-option">
+                            <input type="checkbox" id="selectAll">
+                            <span>Tümünü Seç</span>
+                        </label>
+                        <button id="refreshButton" class="refresh-btn">
+                            <i class="fas fa-sync-alt"></i> Yenile
+                        </button>
                     </div>
+                </div>
+                
+                <div class="webhook-list" id="list">
+                    <!-- Webhook kayıtları buraya gelecek -->
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        const API_URL = '/api/webhook';
-        let currentCookies = [];
+    <!-- Onay Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <h2>Onay</h2>
+            <p id="confirmMessage">Bu işlemi gerçekleştirmek istediğinizden emin misiniz?</p>
+            <div class="modal-buttons">
+                <button id="confirmCancel" class="modal-button">İptal</button>
+                <button id="confirmOk" class="modal-button warning">Onayla</button>
+            </div>
+        </div>
+    </div>
 
-        async function fetchCookies() {
-            try {
-                const response = await fetch(API_URL);
-                const data = await response.json();
-                currentCookies = data;
-                renderCookieList(data);
-            } catch (error) {
-                console.error('Error fetching cookies:', error);
-            }
-        }
-
-        function renderCookieList(groups) {
-            const cookieList = document.getElementById('cookieList');
-            cookieList.innerHTML = groups.map(group => `
-                <div class="list-group-item">
-                    <h6 class="mb-2 domain">${group.url}</h6>
-                    <div class="small text-muted mb-2">Date: ${new Date(group.date).toLocaleDateString()}</div>
-                    <div class="cookie-items">
-                        ${group.cookies.map(item => `
-                            <div class="cookie-item py-2" onclick="showCookieDetail('${item.id}')">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>${item.cookie.name}</strong>
-                                        <span class="badge bg-secondary">${item.cookie.secure ? 'Secure' : 'Not Secure'}</span>
-                                    </div>
-                                    <small class="timestamp">${new Date(item.timestamp).toLocaleTimeString()}</small>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        async function showCookieDetail(id) {
-            const cookie = currentCookies.flatMap(group => group.cookies).find(c => c.id === id);
-            if (!cookie) return;
-
-            const detailContent = document.getElementById('detailContent');
-            detailContent.innerHTML = `
-                <div class="mb-3">
-                    <h6>Domain</h6>
-                    <p>${cookie.cookie.domain}</p>
-                </div>
-                <div class="mb-3">
-                    <h6>Name</h6>
-                    <p>${cookie.cookie.name}</p>
-                </div>
-                <div class="mb-3">
-                    <h6>Value</h6>
-                    <pre class="bg-light p-2 rounded">${cookie.cookie.value}</pre>
-                </div>
-                <div class="mb-3">
-                    <h6>Path</h6>
-                    <p>${cookie.cookie.path}</p>
-                </div>
-                <div class="mb-3">
-                    <h6>Expires</h6>
-                    <p>${cookie.cookie.expires}</p>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>Security</h6>
-                        <ul class="list-unstyled">
-                            <li>
-                                <span class="badge ${cookie.cookie.secure ? 'bg-success' : 'bg-secondary'}">
-                                    ${cookie.cookie.secure ? 'Secure' : 'Not Secure'}
-                                </span>
-                            </li>
-                            <li>
-                                <span class="badge ${cookie.cookie.httpOnly ? 'bg-info' : 'bg-secondary'}">
-                                    ${cookie.cookie.httpOnly ? 'HTTP Only' : 'Not HTTP Only'}
-                                </span>
-                            </li>
-                            <li>
-                                <span class="badge bg-primary">
-                                    SameSite: ${cookie.cookie.sameSite}
-                                </span>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6>Additional Info</h6>
-                        <ul class="list-unstyled">
-                            <li>Host Only: ${cookie.cookie.hostOnly ? 'Yes' : 'No'}</li>
-                            <li>First Party Domain: ${cookie.cookie.firstPartyDomain || 'N/A'}</li>
-                        </ul>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Refresh button handler
-        document.getElementById('refreshBtn').addEventListener('click', fetchCookies);
-
-        // Initial load
-        fetchCookies();
-
-        // Auto refresh every 30 seconds
-        setInterval(fetchCookies, 30000);
-    </script>
+    <script src="main.js"></script>
 </body>
 </html>
