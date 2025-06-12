@@ -4,102 +4,309 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cookie Takip Paneli</title>
-    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #1a73e8;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .refresh-btn {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .refresh-btn:hover {
+            background: #1557b0;
+        }
+
+        .cookie-list {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .cookie-item {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .cookie-item:hover {
+            background: #f8f9fa;
+        }
+
+        .cookie-item:last-child {
+            border-bottom: none;
+        }
+
+        .domain-header {
+            font-size: 18px;
+            color: #1a73e8;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .timestamp {
+            color: #5f6368;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .info-preview {
+            color: #3c4043;
+            font-size: 14px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .info-label {
+            color: #5f6368;
+            font-weight: 500;
+            min-width: 100px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: relative;
+            background: #fff;
+            margin: 50px auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 800px;
+            border-radius: 8px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .copy-btn {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .copy-btn:hover {
+            background: #1557b0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #5f6368;
+        }
+
+        .json-content {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .copied-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #323232;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <div class="header-content">
-                <h1><i class="fas fa-cookie-bite"></i> Cookie Takip Paneli</h1>
-                <div class="stats-cards" id="stats">
-                    <!-- İstatistik kartları buraya gelecek -->
-                </div>
-            </div>
-        </header>
-        
-        <div class="main-content">
-            <div class="sidebar">
-                <div class="filter-section">
-                    <h3><i class="fas fa-filter"></i> Filtreler</h3>
-                    <div class="filter-options">
-                        <label class="filter-option">
-                            <input type="checkbox" id="showOnlyCookies" checked>
-                            <span>Sadece Cookie'leri Göster</span>
-                        </label>
-                        <div class="domain-filter">
-                            <h4>Domain Filtresi</h4>
-                            <select id="domainFilter">
-                                <option value="">Tümü</option>
-                                <!-- Domainler JavaScript ile doldurulacak -->
-                            </select>
-                        </div>
-                        <div class="user-filter">
-                            <h4>Kullanıcı Filtresi</h4>
-                            <select id="userFilter">
-                                <option value="">Tümü</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="summary-section">
-                    <h3><i class="fas fa-chart-pie"></i> Özet</h3>
-                    <div id="summary">
-                        <!-- Özet bilgiler JavaScript ile doldurulacak -->
-                    </div>
-                </div>
+        <div class="header">
+            <h1>
+                <i class="fas fa-cookie-bite"></i>
+                Cookie Takip Paneli
+            </h1>
+            <button id="refreshBtn" class="refresh-btn">
+                <i class="fas fa-sync-alt"></i>
+                Yenile
+            </button>
+        </div>
 
-                <div class="actions-section">
-                    <h3><i class="fas fa-trash"></i> Veri Yönetimi</h3>
-                    <div class="action-buttons">
-                        <button id="deleteSelected" class="action-button" disabled>
-                            <i class="fas fa-trash-alt"></i> Seçilenleri Sil
-                        </button>
-                        <button id="deleteAll" class="action-button warning">
-                            <i class="fas fa-trash"></i> Tümünü Sil
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="content-area">
-                <div class="toolbar">
-                    <div class="search-box">
-                        <input type="text" id="searchInput" placeholder="Cookie veya domain ara...">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <div class="view-options">
-                        <label class="select-all-option">
-                            <input type="checkbox" id="selectAll">
-                            <span>Tümünü Seç</span>
-                        </label>
-                        <button id="refreshButton" class="refresh-btn">
-                            <i class="fas fa-sync-alt"></i> Yenile
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="webhook-list" id="list">
-                    <!-- Webhook kayıtları buraya gelecek -->
-                </div>
-            </div>
+        <div id="cookieList" class="cookie-list">
+            <!-- Cookie items will be listed here -->
         </div>
     </div>
 
-    <!-- Onay Modal -->
-    <div id="confirmModal" class="modal">
+    <div id="cookieModal" class="modal">
         <div class="modal-content">
-            <h2>Onay</h2>
-            <p id="confirmMessage">Bu işlemi gerçekleştirmek istediğinizden emin misiniz?</p>
-            <div class="modal-buttons">
-                <button id="confirmCancel" class="modal-button">İptal</button>
-                <button id="confirmOk" class="modal-button warning">Onayla</button>
+            <div class="modal-header">
+                <h2>Cookie Detayları</h2>
+                <div>
+                    <button id="copyBtn" class="copy-btn">
+                        <i class="fas fa-copy"></i>
+                        JSON Kopyala
+                    </button>
+                    <button class="close-btn">&times;</button>
+                </div>
+            </div>
+            <div id="jsonContent" class="json-content">
+                <!-- JSON content will be shown here -->
             </div>
         </div>
     </div>
 
-    <script src="main.js"></script>
+    <div id="copiedToast" class="copied-toast">
+        JSON kopyalandı!
+    </div>
+
+    <script>
+        const modal = document.getElementById('cookieModal');
+        const jsonContent = document.getElementById('jsonContent');
+        const copyBtn = document.getElementById('copyBtn');
+        const copiedToast = document.getElementById('copiedToast');
+        let currentCookies = [];
+
+        async function fetchCookies() {
+            try {
+                const response = await fetch('/api/webhook');
+                const data = await response.json();
+                currentCookies = data;
+                renderCookies(data);
+            } catch (error) {
+                console.error('Error fetching cookies:', error);
+            }
+        }
+
+        function renderCookies(cookies) {
+            const cookieList = document.getElementById('cookieList');
+            cookieList.innerHTML = cookies.map(item => `
+                <div class="cookie-item" onclick="showCookieDetails(${item.id})">
+                    <div class="domain-header">
+                        <i class="fas fa-globe"></i>
+                        ${item.body.url || 'Unknown Domain'}
+                    </div>
+                    <div class="timestamp">
+                        <i class="far fa-clock"></i>
+                        ${new Date(item.time).toLocaleString()}
+                    </div>
+                    <div class="info-preview">
+                        <div>
+                            <span class="info-label">Cookies:</span>
+                            ${item.cookieCount}
+                        </div>
+                        <div>
+                            <span class="info-label">User ID:</span>
+                            ${item.userId}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showCookieDetails(id) {
+            const cookie = currentCookies.find(c => c.id === id);
+            if (!cookie) return;
+
+            jsonContent.textContent = JSON.stringify(cookie, null, 2);
+            modal.style.display = 'block';
+        }
+
+        // Copy button functionality
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(jsonContent.textContent).then(() => {
+                copiedToast.style.display = 'block';
+                setTimeout(() => {
+                    copiedToast.style.display = 'none';
+                }, 2000);
+            });
+        });
+
+        // Close modal when clicking close button or outside
+        document.querySelector('.close-btn').addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Refresh button functionality
+        document.getElementById('refreshBtn').addEventListener('click', fetchCookies);
+
+        // Initial load
+        fetchCookies();
+
+        // Auto refresh every 30 seconds
+        setInterval(fetchCookies, 30000);
+    </script>
 </body>
 </html>
