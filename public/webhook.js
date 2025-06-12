@@ -19,6 +19,16 @@ const activeDomainsElement = document.getElementById('activeDomains');
 const clearDataBtn = document.getElementById('clearData');
 const exportDataBtn = document.getElementById('exportData');
 
+// Show cookie details in modal - Making it global first
+window.showCookieDetails = function(id) {
+    const cookie = currentCookies.find(c => c.id === id);
+    if (!cookie) return;
+
+    jsonContent.textContent = JSON.stringify(cookie, null, 2);
+    modal.classList.add('show');
+    modal.style.display = 'flex';
+};
+
 // Fetch cookies from the API
 async function fetchCookies() {
     try {
@@ -100,15 +110,6 @@ function renderCookies() {
     `).join('');
 }
 
-// Show cookie details in modal
-function showCookieDetails(id) {
-    const cookie = currentCookies.find(c => c.id === id);
-    if (!cookie) return;
-
-    jsonContent.textContent = JSON.stringify(cookie, null, 2);
-    modal.style.display = 'block';
-}
-
 // Event Listeners
 copyJson.addEventListener('click', () => {
     navigator.clipboard.writeText(jsonContent.textContent).then(() => {
@@ -120,11 +121,13 @@ copyJson.addEventListener('click', () => {
 });
 
 closeModal.addEventListener('click', () => {
+    modal.classList.remove('show');
     modal.style.display = 'none';
 });
 
 window.addEventListener('click', (event) => {
     if (event.target === modal) {
+        modal.classList.remove('show');
         modal.style.display = 'none';
     }
 });
@@ -175,9 +178,6 @@ exportDataBtn.addEventListener('click', () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 });
-
-// Make showCookieDetails available globally
-window.showCookieDetails = showCookieDetails;
 
 // Initial load
 fetchCookies();
