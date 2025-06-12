@@ -15,18 +15,110 @@ const activeDomainsElement = document.getElementById('activeDomains');
 const clearDataBtn = document.getElementById('clearData');
 const exportDataBtn = document.getElementById('exportData');
 
+// Get browser information
+function getBrowserInfo() {
+    const ua = navigator.userAgent;
+    let browserName = "Unknown";
+    let browserVersion = "";
+    
+    if (ua.indexOf("Chrome") > -1) {
+        browserName = "Chrome";
+        browserVersion = ua.match(/Chrome\/([0-9.]+)/)[1];
+    } else if (ua.indexOf("Firefox") > -1) {
+        browserName = "Firefox";
+        browserVersion = ua.match(/Firefox\/([0-9.]+)/)[1];
+    } else if (ua.indexOf("Safari") > -1) {
+        browserName = "Safari";
+        browserVersion = ua.match(/Version\/([0-9.]+)/)[1];
+    } else if (ua.indexOf("Edge") > -1) {
+        browserName = "Edge";
+        browserVersion = ua.match(/Edge\/([0-9.]+)/)[1];
+    }
+    
+    return `${browserName}${browserVersion.split('.')[0]}`;
+}
+
+// Get device type
+function getDeviceType() {
+    const ua = navigator.userAgent;
+    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+        return "Tablet";
+    } else if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
+        return "Mobile";
+    }
+    return "Desktop";
+}
+
+// Get OS information
+function getOSInfo() {
+    const ua = navigator.userAgent;
+    let os = "Unknown";
+    
+    if (ua.indexOf("Win") > -1) os = "Win";
+    else if (ua.indexOf("Mac") > -1) os = "Mac";
+    else if (ua.indexOf("Linux") > -1) os = "Linux";
+    else if (ua.indexOf("Android") > -1) os = "Android";
+    else if (ua.indexOf("iOS") > -1) os = "iOS";
+    
+    return os;
+}
+
+// Calculate session duration
+function getSessionDuration(timestamp) {
+    const now = Date.now();
+    const duration = now - timestamp;
+    const hours = Math.floor(duration / (1000 * 60 * 60));
+    const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h${minutes}m`;
+}
+
 // Format user ID for display
 function formatUserId(userId) {
     // Check if it's already a formatted ID
-    if (typeof userId === 'string' && userId.includes('_')) {
-        const parts = userId.split('_');
-        if (parts.length === 3) {
-            const [device, session, timestamp] = parts;
+    if (typeof userId === 'string' && userId.includes('|')) {
+        const parts = userId.split('|');
+        if (parts.length >= 6) {
+            const [device, browser, os, location, session, timestamp] = parts;
             const date = new Date(parseInt(timestamp));
-            return `${device.charAt(0).toUpperCase() + device.slice(1)} | Session: ${session} | ${date.toLocaleString()}`;
+            const sessionDuration = getSessionDuration(parseInt(timestamp));
+
+            return {
+                mainInfo: `${device} | ${browser} | ${sessionDuration}`,
+                details: [
+                    { icon: 'devices', label: 'Device', value: device },
+                    { icon: 'web', label: 'Browser', value: browser },
+                    { icon: 'computer', label: 'OS', value: os },
+                    { icon: 'location_on', label: 'Location', value: location },
+                    { icon: 'timer', label: 'Session', value: session },
+                    { icon: 'schedule', label: 'Started', value: date.toLocaleString() },
+                    { icon: 'hourglass_top', label: 'Duration', value: sessionDuration }
+                ]
+            };
         }
     }
-    return `User ${userId}`; // Fallback for old format
+    
+    // Generate new format for old IDs
+    const device = getDeviceType();
+    const browser = getBrowserInfo();
+    const os = getOSInfo();
+    const location = "Unknown";
+    const session = Math.random().toString(36).substr(2, 9);
+    const timestamp = Date.now();
+    
+    const newUserId = `${device}|${browser}|${os}|${location}|${session}|${timestamp}`;
+    
+    return {
+        mainInfo: `${device} | ${browser} | 0h0m`,
+        details: [
+            { icon: 'devices', label: 'Device', value: device },
+            { icon: 'web', label: 'Browser', value: browser },
+            { icon: 'computer', label: 'OS', value: os },
+            { icon: 'location_on', label: 'Location', value: location },
+            { icon: 'timer', label: 'Session', value: session },
+            { icon: 'schedule', label: 'Started', value: new Date(timestamp).toLocaleString() },
+            { icon: 'hourglass_top', label: 'Duration', value: '0h0m' }
+        ]
+    };
 }
 
 // Render cookies to the list
@@ -34,7 +126,10 @@ function renderCookies() {
     console.log('Rendering cookies:', currentCookies);
     const filteredCookies = getFilteredCookies();
     
-    webhookList.innerHTML = filteredCookies.map(item => `
+    webhookList.innerHTML = filteredCookies.map(item => {
+        const userIdInfo = formatUserId(item.userId);
+        
+        return `
         <div class="webhook-item" data-id="${item.id}">
             <div class="webhook-header">
                 <div class="domain-name">
@@ -50,11 +145,19 @@ function renderCookies() {
                     <span class="material-icons">cookie</span>
                     ${item.cookieCount} cookies
                 </div>
-                <div class="info-item">
+                <div class="info-item user-id-container">
                     <span class="material-icons">person</span>
                     <div class="user-id-info">
-                        <span class="user-id-label">User:</span>
-                        <span class="user-id-value">${formatUserId(item.userId)}</span>
+                        <span class="user-id-main">${userIdInfo.mainInfo}</span>
+                        <div class="user-id-details">
+                            ${userIdInfo.details.map(detail => `
+                                <div class="detail-item">
+                                    <span class="material-icons">${detail.icon}</span>
+                                    <span class="detail-label">${detail.label}:</span>
+                                    <span class="detail-value">${detail.value}</span>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -72,7 +175,7 @@ function renderCookies() {
                 </div>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 
     // Add click event listeners to all webhook items
     document.querySelectorAll('.webhook-item').forEach(item => {

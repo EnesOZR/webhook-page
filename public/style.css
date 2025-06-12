@@ -395,22 +395,102 @@ select {
   height: calc(100% - 50px);
 }
 
+.user-id-container {
+    position: relative;
+}
+
 .user-id-info {
+    display: flex;
+    flex-direction: column;
+    background: #f0f4f8;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #e0e6ed;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.user-id-info:hover {
+    background: #e8eef5;
+    border-color: #c0cde0;
+}
+
+.user-id-main {
+    color: #1a73e8;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.user-id-details {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    min-width: 300px;
+}
+
+.user-id-info:hover .user-id-details {
+    display: block;
+}
+
+.detail-item {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #f0f4f8;
-    padding: 4px 8px;
-    border-radius: 4px;
-    border: 1px solid #e0e6ed;
+    padding: 8px;
+    border-bottom: 1px solid #f0f4f8;
 }
 
-.user-id-label {
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-item .material-icons {
+    color: #5f6368;
+    font-size: 18px;
+}
+
+.detail-label {
     color: #5f6368;
     font-weight: 500;
+    min-width: 80px;
 }
 
-.user-id-value {
+.detail-value {
     color: #1a73e8;
     font-family: 'Roboto Mono', monospace;
+    font-size: 13px;
+}
+
+/* Tooltip arrow */
+.user-id-details::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 20px;
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-left: 1px solid #e0e6ed;
+    border-top: 1px solid #e0e6ed;
+    transform: rotate(45deg);
+}
+
+/* Animation for details */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.user-id-info:hover .user-id-details {
+    display: block;
+    animation: fadeIn 0.2s ease-out;
 }
