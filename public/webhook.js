@@ -19,15 +19,47 @@ const activeDomainsElement = document.getElementById('activeDomains');
 const clearDataBtn = document.getElementById('clearData');
 const exportDataBtn = document.getElementById('exportData');
 
-// Show cookie details in modal - Making it global first
-window.showCookieDetails = function(id) {
-    const cookie = currentCookies.find(c => c.id === id);
-    if (!cookie) return;
+// Render cookies to the list
+function renderCookies() {
+    const filteredCookies = getFilteredCookies();
+    
+    webhookList.innerHTML = filteredCookies.map(item => `
+        <div class="webhook-item" data-id="${item.id}">
+            <div class="webhook-header">
+                <div class="domain-name">
+                    <span class="material-icons">public</span>
+                    ${item.body.url || 'Unknown Domain'}
+                </div>
+                <div class="webhook-time">
+                    ${new Date(item.time).toLocaleString()}
+                </div>
+            </div>
+            <div class="webhook-info">
+                <div class="info-item">
+                    <span class="material-icons">cookie</span>
+                    ${item.cookieCount} cookies
+                </div>
+                <div class="info-item">
+                    <span class="material-icons">person</span>
+                    User ID: ${item.userId}
+                </div>
+            </div>
+        </div>
+    `).join('');
 
-    jsonContent.textContent = JSON.stringify(cookie, null, 2);
-    modal.classList.add('show');
-    modal.style.display = 'flex';
-};
+    // Add click event listeners to all webhook items
+    document.querySelectorAll('.webhook-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const id = parseInt(item.dataset.id);
+            const cookie = currentCookies.find(c => c.id === id);
+            if (cookie) {
+                jsonContent.textContent = JSON.stringify(cookie, null, 2);
+                modal.style.display = 'flex';
+                modal.classList.add('show');
+            }
+        });
+    });
+}
 
 // Fetch cookies from the API
 async function fetchCookies() {
@@ -79,35 +111,6 @@ function getFilteredCookies() {
             item.userId.toString().includes(searchQuery);
         return matchesDomain && matchesUser && matchesSearch;
     });
-}
-
-// Render cookies to the list
-function renderCookies() {
-    const filteredCookies = getFilteredCookies();
-    
-    webhookList.innerHTML = filteredCookies.map(item => `
-        <div class="webhook-item" onclick="showCookieDetails(${item.id})">
-            <div class="webhook-header">
-                <div class="domain-name">
-                    <span class="material-icons">public</span>
-                    ${item.body.url || 'Unknown Domain'}
-                </div>
-                <div class="webhook-time">
-                    ${new Date(item.time).toLocaleString()}
-                </div>
-            </div>
-            <div class="webhook-info">
-                <div class="info-item">
-                    <span class="material-icons">cookie</span>
-                    ${item.cookieCount} cookies
-                </div>
-                <div class="info-item">
-                    <span class="material-icons">person</span>
-                    User ID: ${item.userId}
-                </div>
-            </div>
-        </div>
-    `).join('');
 }
 
 // Event Listeners
