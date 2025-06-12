@@ -2,12 +2,38 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Webhook Paneli</title>
   <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h1>Gelen Webhook POST Kayıtları</h1>
-  <div id="list"></div>
+  <div class="container">
+    <header>
+      <h1>Webhook Paneli</h1>
+      <div class="stats" id="stats">
+        <!-- İstatistikler buraya gelecek -->
+      </div>
+    </header>
+    
+    <div class="main-content">
+      <div class="sidebar">
+        <div class="filter-section">
+          <h3>Filtreler</h3>
+          <div class="filter-options">
+            <label>
+              <input type="checkbox" id="showOnlyCookies" checked>
+              Sadece Cookie'leri Göster
+            </label>
+          </div>
+        </div>
+      </div>
+      
+      <div class="webhook-list" id="list">
+        <!-- Webhook kayıtları buraya gelecek -->
+      </div>
+    </div>
+  </div>
   <script src="main.js"></script>
 </body>
 </html>

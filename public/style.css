@@ -1,14 +1,121 @@
-body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 20px; }
-h1 { color: #333; }
-#list { margin-top: 20px; }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background: #f5f5f5;
+  color: #333;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+h1 {
+  color: #2c3e50;
+  font-size: 24px;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.stats {
+  color: #666;
+  font-size: 14px;
+}
+
+.main-content {
+  display: flex;
+  gap: 20px;
+}
+
+.sidebar {
+  width: 250px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  height: fit-content;
+}
+
+.filter-section h3 {
+  font-size: 16px;
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
+
+.filter-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+}
+
+.webhook-list {
+  flex: 1;
+}
+
 .post {
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px #0001;
-  margin-bottom: 16px;
-  padding: 16px;
-  word-break: break-all;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  margin-bottom: 15px;
+  overflow: hidden;
 }
-.time { color: #888; font-size: 0.9em; }
-.cookie-count { color: #666; font-size: 0.9em; margin: 8px 0; }
-pre { background: #f0f0f0; padding: 8px; border-radius: 4px; }
+
+.post-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+  background: #f8f9fa;
+}
+
+.time {
+  color: #666;
+  font-size: 14px;
+}
+
+.cookie-count {
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.post-content {
+  padding: 20px;
+}
+
+pre {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+  font-size: 13px;
+  overflow-x: auto;
+  border: 1px solid #eee;
+}
+
+/* Responsive Tasarım */
+@media (max-width: 768px) {
+  .main-content {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+  }
+}
