@@ -1,6 +1,12 @@
 {
   "name": "webhook-panel",
   "version": "1.0.0",
-  "main": "api/webhook.js",
-  "dependencies": {}
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel deploy --prod"
+  },
+  "dependencies": {
+    "@vercel/node": "^3.0.0"
+  }
 }
