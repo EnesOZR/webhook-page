@@ -1,27 +1,17 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "public/**/*",
-      "use": "@vercel/static"
-    }
-  ],
+  "buildCommand": "next build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "env": {
+    "ENCRYPTION_KEY": "@encryption-key",
+    "JWT_SECRET": "@jwt-secret",
+    "NEXT_PUBLIC_API_URL": "@api-url"
+  },
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/public/$1"
     }
-  ],
-  "env": {
-    "ENCRYPTION_KEY": "@encryption-key",
-    "JWT_SECRET": "@jwt-secret"
-  }
+  ]
 }
