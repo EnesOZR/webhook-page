@@ -3,109 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webhook Panel</title>
+    <title>Cookie Monitor Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@heroicons/react@2.0.18/outline.css" rel="stylesheet">
     <style>
-        .cookie-table {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .loading {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        .cookie-table { max-height: 600px; overflow-y: auto; }
+        .chart-container { height: 300px; }
+        .loading { animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-gray-100">
-    <div class="container mx-auto px-4 py-8">
-        <header class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">Webhook Panel</h1>
-            <p class="text-gray-600">Monitor and manage cookie data collection</p>
-        </header>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <!-- Stats Card -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-xl font-semibold mb-4">Statistics</h2>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="text-center">
-                        <p class="text-gray-600">Total Requests</p>
-                        <p id="totalRequests" class="text-2xl font-bold">0</p>
+    <div class="min-h-screen">
+        <!-- Header -->
+        <nav class="bg-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex">
+                        <div class="flex-shrink-0 flex items-center">
+                            <h1 class="text-xl font-bold text-gray-800">Cookie Monitor</h1>
+                        </div>
                     </div>
-                    <div class="text-center">
-                        <p class="text-gray-600">Active Users</p>
-                        <p id="activeUsers" class="text-2xl font-bold">0</p>
-                    </div>
-                </div>
-                <canvas id="requestChart" class="mt-4"></canvas>
-            </div>
-
-            <!-- Controls Card -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-xl font-semibold mb-4">Controls</h2>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-gray-700 mb-2">User ID Filter</label>
-                        <input type="text" id="userIdFilter" class="w-full px-3 py-2 border rounded-lg">
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 mb-2">Limit Results</label>
-                        <input type="number" id="limitResults" value="50" min="1" max="100" class="w-full px-3 py-2 border rounded-lg">
-                    </div>
-                    <div class="flex space-x-4">
-                        <button id="refreshBtn" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
-                            Refresh Data
-                        </button>
-                        <button id="clearBtn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
-                            Clear Data
-                        </button>
-                        <button id="exportBtn" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
-                            Export JSON
+                    <div class="flex items-center">
+                        <button id="exportBtn" class="ml-4 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                            Export Data
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
+        </nav>
 
-        <!-- Data Table -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Cookie Data</h2>
-            <div class="cookie-table">
-                <table class="min-w-full">
-                    <thead>
-                        <tr class="bg-gray-50">
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">URL</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cookies</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Device Info</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cookieTableBody">
-                        <!-- Data will be populated here -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Cookie Detail Modal -->
-        <div id="cookieModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
-            <div class="relative top-20 mx-auto p-5 border w-4/5 shadow-lg rounded-md bg-white">
-                <div class="mt-3">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Cookie Details</h3>
-                    <div class="mt-2 text-sm text-gray-500">
-                        <pre id="cookieDetail" class="whitespace-pre-wrap bg-gray-100 p-4 rounded"></pre>
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Active Users</dt>
+                                    <dd class="flex items-baseline">
+                                        <div class="text-2xl font-semibold text-gray-900" id="activeUsers">0</div>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex justify-end mt-4 space-x-4">
-                        <button id="copyJson" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                </div>
+
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                </svg>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Total Cookies</dt>
+                                    <dd class="flex items-baseline">
+                                        <div class="text-2xl font-semibold text-gray-900" id="totalCookies">0</div>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                                </svg>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Unique Domains</dt>
+                                    <dd class="flex items-baseline">
+                                        <div class="text-2xl font-semibold text-gray-900" id="uniqueDomains">0</div>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">Success Rate</dt>
+                                    <dd class="flex items-baseline">
+                                        <div class="text-2xl font-semibold text-gray-900" id="successRate">100%</div>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Cookie Collection Rate</h3>
+                        <div class="mt-2 chart-container">
+                            <canvas id="cookieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Domain Distribution</h3>
+                        <div class="mt-2 chart-container">
+                            <canvas id="domainChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="mt-8 bg-white shadow rounded-lg p-6">
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Domain Filter</label>
+                        <input type="text" id="domainFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Date Range</label>
+                        <input type="date" id="dateFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Security Filter</label>
+                        <select id="securityFilter" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">All</option>
+                            <option value="secure">Secure Only</option>
+                            <option value="httpOnly">HTTP Only</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Results Per Page</label>
+                        <select id="pageSize" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cookie Table -->
+            <div class="mt-8 bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="sm:flex sm:items-center">
+                        <div class="sm:flex-auto">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Cookie Data</h3>
+                        </div>
+                        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+                            <button id="refreshBtn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-4 cookie-table">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Domain</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Security</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cookieTableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- Data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Cookie Detail Modal -->
+    <div id="cookieModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="bg-white rounded-lg overflow-hidden shadow-xl max-w-4xl w-full m-4">
+                <div class="px-6 py-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-medium text-gray-900">Cookie Details</h3>
+                        <button id="closeModal" class="text-gray-400 hover:text-gray-500">
+                            <span class="sr-only">Close</span>
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="mt-4">
+                        <pre id="cookieDetail" class="bg-gray-50 rounded p-4 overflow-auto max-h-96"></pre>
+                    </div>
+                    <div class="mt-4 flex justify-end space-x-3">
+                        <button id="copyJson" class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                             Copy JSON
                         </button>
-                        <button id="closeModal" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
-                            Close
+                        <button id="downloadJson" class="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Download
                         </button>
                     </div>
                 </div>
@@ -114,215 +238,196 @@
     </div>
 
     <script>
-        let requestChart = null;
+        // Socket.IO connection
+        const socket = io();
+        let cookieChart, domainChart;
         let currentData = [];
 
-        // Initialize Chart
-        function initChart() {
-            const ctx = document.getElementById('requestChart').getContext('2d');
-            requestChart = new Chart(ctx, {
+        // Initialize charts
+        function initCharts() {
+            const cookieCtx = document.getElementById('cookieChart').getContext('2d');
+            cookieChart = new Chart(cookieCtx, {
                 type: 'line',
                 data: {
                     labels: [],
                     datasets: [{
-                        label: 'Requests per Hour',
+                        label: 'Cookies per Minute',
                         data: [],
-                        borderColor: 'rgb(59, 130, 246)',
+                        borderColor: 'rgb(79, 70, 229)',
                         tension: 0.1
                     }]
                 },
                 options: {
                     responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
+                    maintainAspectRatio: false
+                }
+            });
+
+            const domainCtx = document.getElementById('domainChart').getContext('2d');
+            domainChart = new Chart(domainCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: []
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
                 }
             });
         }
 
-        // Fetch and display data
-        async function fetchData() {
-            const userId = document.getElementById('userIdFilter').value;
-            const limit = document.getElementById('limitResults').value;
-            
-            try {
-                const response = await fetch(`/api/webhook?userId=${userId}&limit=${limit}`);
-                const data = await response.json();
-                
-                updateTable(data);
-                updateStats(data);
-                updateChart(data);
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
+        // Update stats
+        function updateStats(data) {
+            document.getElementById('activeUsers').textContent = new Set(data.map(d => d.userId)).size;
+            document.getElementById('totalCookies').textContent = data.reduce((acc, curr) => acc + curr.cookieCount, 0);
+            document.getElementById('uniqueDomains').textContent = new Set(data.flatMap(d => d.cookies.map(c => new URL(c.domain).hostname))).size;
         }
 
-        // Update table with data
+        // Update cookie table
         function updateTable(data) {
-            currentData = data;
             const tbody = document.getElementById('cookieTableBody');
             tbody.innerHTML = '';
 
             data.forEach(entry => {
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50';
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${new Date(entry.time).toLocaleString()}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ${entry.url}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${entry.cookieCount} cookies
-                        <button onclick="showCookieDetail(${entry.id})" class="ml-2 text-blue-600 hover:text-blue-900">
-                            View
-                        </button>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${entry.deviceInfo.browser} on ${entry.deviceInfo.os}
-                        <button onclick="showDeviceDetail(${entry.id})" class="ml-2 text-blue-600 hover:text-blue-900">
-                            Details
-                        </button>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button onclick="copyEntry(${entry.id})" class="text-blue-600 hover:text-blue-900 mr-3">
-                            Copy
-                        </button>
-                        <button onclick="deleteEntry('${entry.id}')" class="text-red-600 hover:text-red-900">
-                            Delete
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
+                entry.cookies.forEach(cookie => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${new Date(entry.timestamp).toLocaleString()}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${new URL(cookie.domain).hostname}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${cookie['Name raw']}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${cookie.value ? '********' : ''}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${cookie['Send for raw'] === 'true' ? '🔒' : ''}
+                            ${cookie['HTTP only raw'] === 'true' ? '🔐' : ''}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button onclick="showCookieDetail(${JSON.stringify(cookie)})" class="text-indigo-600 hover:text-indigo-900">
+                                View
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
             });
         }
 
-        // Update statistics
-        function updateStats(data) {
-            document.getElementById('totalRequests').textContent = data.length;
-            const uniqueUsers = new Set(data.map(entry => entry.userId)).size;
-            document.getElementById('activeUsers').textContent = uniqueUsers;
-        }
-
-        // Update chart
-        function updateChart(data) {
-            const hourlyData = {};
-            data.forEach(entry => {
-                const hour = new Date(entry.time).getHours();
-                hourlyData[hour] = (hourlyData[hour] || 0) + 1;
-            });
-
-            const hours = Object.keys(hourlyData).sort((a, b) => a - b);
-            const counts = hours.map(hour => hourlyData[hour]);
-
-            requestChart.data.labels = hours.map(hour => `${hour}:00`);
-            requestChart.data.datasets[0].data = counts;
-            requestChart.update();
-        }
-
-        // Delete entry
-        async function deleteEntry(id) {
-            try {
-                await fetch('/api/webhook', {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ ids: [id] })
-                });
-                fetchData();
-            } catch (error) {
-                console.error('Error deleting entry:', error);
-            }
-        }
-
-        // Clear all data
-        async function clearAllData() {
-            if (!confirm('Are you sure you want to clear all data?')) return;
-            
-            try {
-                await fetch('/api/webhook', {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ deleteAll: true })
-                });
-                fetchData();
-            } catch (error) {
-                console.error('Error clearing data:', error);
-            }
-        }
-
-        // Show cookie detail modal
-        function showCookieDetail(id) {
-            const entry = currentData.find(e => e.id === id);
-            if (!entry) return;
-
+        // Show cookie detail
+        function showCookieDetail(cookie) {
             const modal = document.getElementById('cookieModal');
             const detail = document.getElementById('cookieDetail');
-            detail.textContent = JSON.stringify(entry.cookies, null, 2);
+            detail.textContent = JSON.stringify(cookie, null, 2);
             modal.classList.remove('hidden');
-        }
-
-        // Show device detail modal
-        function showDeviceDetail(id) {
-            const entry = currentData.find(e => e.id === id);
-            if (!entry) return;
-
-            const modal = document.getElementById('cookieModal');
-            const detail = document.getElementById('cookieDetail');
-            detail.textContent = JSON.stringify(entry.deviceInfo, null, 2);
-            modal.classList.remove('hidden');
-        }
-
-        // Copy entry data
-        function copyEntry(id) {
-            const entry = currentData.find(e => e.id === id);
-            if (!entry) return;
-
-            navigator.clipboard.writeText(JSON.stringify(entry, null, 2))
-                .then(() => alert('Data copied to clipboard!'))
-                .catch(err => console.error('Failed to copy:', err));
-        }
-
-        // Export all data as JSON
-        async function exportJson() {
-            const response = await fetch('/api/webhook?format=json');
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'cookies.json';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
         }
 
         // Event listeners
         document.addEventListener('DOMContentLoaded', () => {
-            initChart();
+            initCharts();
             fetchData();
 
+            // Setup event listeners
             document.getElementById('refreshBtn').addEventListener('click', fetchData);
-            document.getElementById('clearBtn').addEventListener('click', clearAllData);
-            document.getElementById('exportBtn').addEventListener('click', exportJson);
-            document.getElementById('userIdFilter').addEventListener('change', fetchData);
-            document.getElementById('limitResults').addEventListener('change', fetchData);
+            document.getElementById('exportBtn').addEventListener('click', exportData);
             document.getElementById('closeModal').addEventListener('click', () => {
                 document.getElementById('cookieModal').classList.add('hidden');
             });
             document.getElementById('copyJson').addEventListener('click', () => {
                 const detail = document.getElementById('cookieDetail').textContent;
                 navigator.clipboard.writeText(detail)
-                    .then(() => alert('JSON copied to clipboard!'))
-                    .catch(err => console.error('Failed to copy:', err));
+                    .then(() => alert('Copied to clipboard!'));
             });
+
+            // Filter event listeners
+            document.getElementById('domainFilter').addEventListener('input', applyFilters);
+            document.getElementById('dateFilter').addEventListener('change', applyFilters);
+            document.getElementById('securityFilter').addEventListener('change', applyFilters);
+            document.getElementById('pageSize').addEventListener('change', applyFilters);
         });
+
+        // Socket events
+        socket.on('newCookies', (data) => {
+            updateRealTimeCharts(data);
+        });
+
+        socket.on('newDomain', (data) => {
+            showNotification(`New domain detected: ${data.domain}`);
+        });
+
+        // Fetch data
+        async function fetchData() {
+            try {
+                const response = await fetch('/api/webhook');
+                const data = await response.json();
+                currentData = data;
+                updateStats(data);
+                updateTable(data);
+                updateCharts(data);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        // Export data
+        async function exportData() {
+            try {
+                const response = await fetch('/api/webhook?format=json');
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'cookies.json';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Error exporting data:', error);
+            }
+        }
+
+        // Update charts
+        function updateCharts(data) {
+            // Update cookie chart
+            const timeLabels = data.map(d => new Date(d.timestamp).toLocaleTimeString());
+            const cookieCounts = data.map(d => d.cookieCount);
+            
+            cookieChart.data.labels = timeLabels;
+            cookieChart.data.datasets[0].data = cookieCounts;
+            cookieChart.update();
+
+            // Update domain chart
+            const domains = {};
+            data.forEach(entry => {
+                entry.cookies.forEach(cookie => {
+                    const domain = new URL(cookie.domain).hostname;
+                    domains[domain] = (domains[domain] || 0) + 1;
+                });
+            });
+
+            const sortedDomains = Object.entries(domains)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 5);
+
+            domainChart.data.labels = sortedDomains.map(([domain]) => domain);
+            domainChart.data.datasets[0].data = sortedDomains.map(([,count]) => count);
+            domainChart.update();
+        }
+
+        // Show notification
+        function showNotification(message) {
+            // Implement notification system
+        }
 
         // Auto-refresh every minute
         setInterval(fetchData, 60000);
